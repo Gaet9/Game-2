@@ -18,12 +18,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   public weapon: PlayerWeaponState = { kind: "none" };
 
-  private readonly input: PlayerInput;
+  private readonly controls: PlayerInput;
   private invulnerableUntilMs = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, input: PlayerInput) {
     super(scene, x, y, "player");
-    this.input = input;
+    this.controls = input;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -32,15 +32,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setCollideWorldBounds(true);
     body.setMaxVelocity(520, 900);
     body.setDragX(800);
+    // The sprite is tall; use a slightly slimmer body for platforming feel.
+    body.setSize(12, 42, true);
+    body.setOffset(3, 6);
   }
 
   public update(nowMs: number) {
     const body = this.body as Phaser.Physics.Arcade.Body;
 
     const speed = 280;
-    if (this.input.left() === this.input.right()) {
+    if (this.controls.left() === this.controls.right()) {
       body.setAccelerationX(0);
-    } else if (this.input.left()) {
+    } else if (this.controls.left()) {
       body.setAccelerationX(-speed * 5);
       this.facing = -1;
     } else {
@@ -50,12 +53,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setFlipX(this.facing === -1);
 
-    if (this.input.jumpJustPressed() && body.blocked.down) {
+    if (this.controls.jumpJustPressed() && body.blocked.down) {
       body.setVelocityY(-560);
       this.emit("jump");
     }
 
-    if (this.input.shootJustPressed()) {
+    if (this.controls.shootJustPressed()) {
       this.tryConsumeShot(nowMs);
     }
 
