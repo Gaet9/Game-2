@@ -5,11 +5,14 @@ export type PlayerInput = {
   right: () => boolean;
   jumpJustPressed: () => boolean;
   shootJustPressed: () => boolean;
+  run: () => boolean;
 };
 
 export type PlayerWeaponState =
   | { kind: "none" }
-  | { kind: "blaster"; ammo: number; cooldownMs: number; lastShotAtMs: number };
+  | { kind: "blaster"; ammo: number; cooldownMs: number; lastShotAtMs: number }
+  | { kind: "sword"; cooldownMs: number; lastShotAtMs: number }
+  | { kind: "glove"; ammo: number; cooldownMs: number; lastShotAtMs: number };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   public pvMax = 100;
@@ -40,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public update(nowMs: number) {
     const body = this.body as Phaser.Physics.Arcade.Body;
 
-    const speed = 280;
+    const speed = this.controls.run() ? 440 : 240;
     if (this.controls.left() === this.controls.right()) {
       body.setAccelerationX(0);
     } else if (this.controls.left()) {
@@ -86,23 +89,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.weapon = { kind: "blaster", ammo, cooldownMs: 180, lastShotAtMs: -1_000_000 };
   }
 
+  public giveSword() {
+    this.weapon = { kind: "sword", cooldownMs: 260, lastShotAtMs: -1_000_000 };
+  }
+
+  public giveGlove(ammo: number) {
+    this.weapon = { kind: "glove", ammo, cooldownMs: 220, lastShotAtMs: -1_000_000 };
+  }
+
   public canShoot(nowMs: number) {
     if (this.weapon.kind === "none") return false;
+    if (this.weapon.kind === "sword") return nowMs - this.weapon.lastShotAtMs >= this.weapon.cooldownMs;
     return this.weapon.ammo > 0 && nowMs - this.weapon.lastShotAtMs >= this.weapon.cooldownMs;
   }
 
   private tryConsumeShot(nowMs: number) {
-    if (this.weapon.kind !== "blaster") return;
     if (!this.canShoot(nowMs)) return;
 
-    // Consume ammo and emit a fire event. The scene decides how to spawn projectiles.
-    this.weapon = {
-      ...this.weapon,
-      ammo: this.weapon.ammo - 1,
-      lastShotAtMs: nowMs
-    };
+    if (this.weapon.kind === "sword") {
+      this.weapon = { ...this.weapon, lastShotAtMs: nowMs };
+      this.emit("sword", { x: this.x, y: this.y - 8, dir: this.facing });
+      return;
+    }
 
-    this.emit("shoot", { x: this.x, y: this.y - 6, dir: this.facing });
+    if (this.weapon.kind === "blaster" || this.weapon.kind === "glove") {
+      this.weapon = {
+        ...this.weapon,
+        ammo: this.weapon.ammo - 1,
+        lastShotAtMs: nowMs
+      };
+
+      const shotKind = this.weapon.kind;
+      this.emit("shoot", { x: this.x, y: this.y - 8, dir: this.facing, kind: shotKind });
+    }
   }
 }
 

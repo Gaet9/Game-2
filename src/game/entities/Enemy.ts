@@ -4,6 +4,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private dir: -1 | 1 = -1;
   private readonly speed = 90;
   public alive = true;
+  public hp = 3;
   private readonly platforms?: Phaser.Physics.Arcade.StaticGroup;
 
   constructor(scene: Phaser.Scene, x: number, y: number, platforms?: Phaser.Physics.Arcade.StaticGroup) {
@@ -58,6 +59,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       ease: "Quad.easeOut",
       onComplete: () => this.destroy()
     });
+  }
+
+  public takeDamage(amount: number) {
+    if (!this.alive) return;
+    this.hp = Math.max(0, this.hp - amount);
+    if (this.hp <= 0) this.kill();
   }
 }
 

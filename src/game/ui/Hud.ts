@@ -69,8 +69,12 @@ export class Hud {
 
     if (this.player.weapon.kind === "none") {
       this.weaponText.setText("Weapon: none");
-    } else {
+    } else if (this.player.weapon.kind === "blaster") {
       this.weaponText.setText(`Weapon: blaster (ammo ${this.player.weapon.ammo})  Shoot: J`);
+    } else if (this.player.weapon.kind === "glove") {
+      this.weaponText.setText(`Weapon: glove (ammo ${this.player.weapon.ammo})  Shoot: J`);
+    } else {
+      this.weaponText.setText("Weapon: sword  Slash: J");
     }
 
     if (this.player.pv <= 0) {
